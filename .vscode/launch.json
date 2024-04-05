@@ -2,7 +2,7 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "Python: Parrotfish",
+            "name": "main.py",
             "type": "debugpy",
             "request": "launch",
             "program": "${workspaceFolder}/src/__main__.py",
