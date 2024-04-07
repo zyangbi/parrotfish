@@ -5,6 +5,9 @@ from typing import Any
 
 from attr import define
 
+from src.configuration.configuration_from_dict import ConfigurationFromDict
+from src.parrotfish import Parrotfish
+
 
 class State:
     """Base class for Task and Parallel states."""
@@ -20,10 +23,16 @@ class State:
 class Task(State):
     """Task state in Step Function."""
 
-    def __init__(self, name: str, arn: str):
+    def __init__(self, name: str, function_name: str, payload: str):
         super().__init__(name)
-        self.arn = arn
-        self.param_function = 1  #####
+        self.function_name = function_name
+        self.config = {
+            "function_name": function_name,
+            "vendor": "AWS",
+            "region": "us-west-2",
+            "payload": payload,
+        }
+        self.parrotfish = Parrotfish(ConfigurationFromDict(self.config))
 
     def get_execution_time(self) -> float:
         return 1
@@ -60,6 +69,13 @@ class Workflow:
     def get_execution_time(self) -> float:
         total_time = sum(state.get_execution_time() for state in self.states)
         return total_time
+
+
+class StepFunction:
+    """A Step Function"""
+
+    def __init__(self):
+        self.workflow = Workflow()
 
 
 def create_state(name, state_def: dict) -> State:
