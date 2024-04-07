@@ -1,3 +1,4 @@
+from abc import abstractmethod
 import boto3
 import json
 from typing import Any
@@ -8,12 +9,12 @@ from attr import define
 class State:
     """Base class for Task and Parallel states."""
 
-    def __init__(self, name: str, execution_time: float = 0):
+    def __init__(self, name: str):
         self.name = name
-        self.execution_time = execution_time
 
+    @abstractmethod
     def get_execution_time(self) -> float:
-        return self.execution_time
+        pass
 
 
 class Task(State):
@@ -22,6 +23,10 @@ class Task(State):
     def __init__(self, name: str, arn: str):
         super().__init__(name)
         self.arn = arn
+        self.param_function = 1  #####
+
+    def get_execution_time(self) -> float:
+        return 1
 
 
 class Parallel(State):
@@ -29,7 +34,7 @@ class Parallel(State):
 
     def __init__(self, name: str):
         super().__init__(name)
-        self.branches = []
+        self.branches: list[Workflow] = []
 
     def add_branch(self, workflow: "Workflow"):
         self.branches.append(workflow)
@@ -38,7 +43,7 @@ class Parallel(State):
         """Returns the longest execution time among all branches."""
         max_time = 0
         for branch in self.branches:
-            branch_time = branch.get_total_execution_time()
+            branch_time = branch.get_execution_time()
             max_time = max(max_time, branch_time)
         return max_time
 
@@ -47,7 +52,7 @@ class Workflow:
     """A workflow, containing a sequence of states."""
 
     def __init__(self):
-        self.states = []
+        self.states: list[State] = []
 
     def add_state(self, state: State):
         self.states.append(state)
