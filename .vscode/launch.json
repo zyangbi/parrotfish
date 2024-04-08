@@ -12,6 +12,13 @@
                 "benchmarks/markdown2html/aws/parrotfish.json",
                 "-v"
             ]
+        },
+        {
+            "name": "step_function.py",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/src/step_function/step_function.py",
+            "console": "integratedTerminal",
         }
     ]
 }

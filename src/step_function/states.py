@@ -1,10 +1,10 @@
-from abc import abstractmethod
+from abc import ABC, abstractmethod
 
 from src.configuration.configuration_from_dict import ConfigurationFromDict
 from src.parrotfish import Parrotfish
 
 
-class State:
+class State(ABC):
     """Base class for Task and Parallel states."""
 
     def __init__(self, name: str):

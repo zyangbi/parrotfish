@@ -3,6 +3,8 @@ import json
 import boto3
 
 from src.step_function.states import State, Task, Parallel, Workflow
+from src.logging_config import logger
+from src.exception.step_function_error import StepFunctionError
 
 
 class StepFunction:
@@ -13,7 +15,6 @@ class StepFunction:
 
     def _load_definition(self, arn: str) -> dict:
         """Load a step function's definition."""
-
         try:
             response = boto3.client("stepfunctions").describe_state_machine(
                 stateMachineArn=arn
@@ -22,14 +23,11 @@ class StepFunction:
             return definition
 
         except Exception as e:
-            print(f"Error retrieving state machine: {e}")
-            return {}
+            logger.debug(e.args[0])
+            raise StepFunctionError("Error loading definition.")
 
     def _extract_payloads(self, execution_arn: str) -> dict:
-        """Extract input payloads for each state from the Step Function execution history.
-
-        Return: dict[state_name, payload]
-        """
+        """Extract input payloads for each state from the Step Function execution history."""
         try:
             history = boto3.client("stepfunctions").get_execution_history(
                 executionArn=execution_arn
@@ -44,28 +42,31 @@ class StepFunction:
             return payloads
 
         except Exception as e:
-            print(f"Error retrieving execution history: {e}")
-            return {}
+            logger.debug(e.args[0])
+            raise StepFunctionError("Error extracting payloads.")
 
     def _create_workflow(self, workflow_def: dict) -> Workflow:
         """Create a Workflow object from a workflow definition."""
-        workflow = Workflow()
+        try:
+            workflow = Workflow()
 
-        state_name = workflow_def["StartAt"]  # starting state
-        while -1:
-            # add state to workflow
-            state_def = workflow_def["States"][state_name]
-            workflow.add_state(self._create_state(state_name, state_def))
+            state_name = workflow_def["StartAt"]  # starting state
+            while True:
+                # add state to workflow
+                state_def = workflow_def["States"][state_name]
+                workflow.add_state(self._create_state(state_name, state_def))
 
-            # go to next state
-            if "Next" in state_def:
-                state_name = state_def["Next"]
-            elif "End" in state_def:
-                break  # end of workflow
-            else:
-                break  ## should throw an exception
+                # go to next state
+                if "Next" in state_def:
+                    state_name = state_def["Next"]
+                else:
+                    break  # end of workflow
 
-        return workflow
+            return workflow
+
+        except Exception as e:
+            logger.debug(e.args[0])
+            raise StepFunctionError("Error creating workflow")
 
     def _create_state(self, name, state_def: dict) -> State:
         """Create a State object from a state definition."""
@@ -81,4 +82,6 @@ class StepFunction:
             return parallel
 
         else:
-            return State(name)  ## should throw an exception
+            raise StepFunctionError(
+                "State definition only support Task and Map type states."
+            )
