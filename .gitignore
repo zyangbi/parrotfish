@@ -28,3 +28,5 @@ venv/
 .coverage
 
 dump/
+
+**/test.py

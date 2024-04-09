@@ -26,8 +26,16 @@ class Task(State):
             "vendor": "AWS",
             "region": "us-west-2",
             "payload": payload,
+            "termination_threshold": 2,
+            "min_sample_per_config": 3,
+            "dynamic_sampling_params": {
+                "max_sample_per_config": 3,
+                "coefficient_of_variation_threshold": 0.1,
+            },
         }
-        self.parrotfish = Parrotfish(ConfigurationFromDict(self.config))
+        parrotfish = Parrotfish(ConfigurationFromDict(self.config))
+        self.memory = parrotfish.optimize(apply=False)
+        self.param_function = parrotfish.param_function
 
     def get_execution_time(self) -> float:
         return 1

@@ -14,10 +14,10 @@
             ]
         },
         {
-            "name": "step_function.py",
+            "name": "test.py",
             "type": "debugpy",
             "request": "launch",
-            "program": "${workspaceFolder}/src/step_function/step_function.py",
+            "program": "${workspaceFolder}/src/step_function/test.py",
             "console": "integratedTerminal",
         }
     ]
