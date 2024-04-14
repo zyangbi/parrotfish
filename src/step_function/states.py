@@ -1,5 +1,7 @@
 from abc import ABC, abstractmethod
 
+import numpy as np
+
 from src.configuration.configuration_from_dict import ConfigurationFromDict
 from src.parrotfish import Parrotfish
 
@@ -12,6 +14,10 @@ class State(ABC):
 
     @abstractmethod
     def get_execution_time(self) -> float:
+        pass
+
+    @abstractmethod
+    def get_cost(self) -> float:
         pass
 
 
@@ -33,12 +39,37 @@ class Task(State):
                 "coefficient_of_variation_threshold": 0.1,
             },
         }
-        parrotfish = Parrotfish(ConfigurationFromDict(self.config))
-        self.memory = parrotfish.optimize(apply=False)
-        self.param_function = parrotfish.param_function
+        self.parrotfish = Parrotfish(ConfigurationFromDict(self.config))
+        self.memory_space = self.parrotfish.explorer.memory_space
+
+        min_memory = self.parrotfish.optimize(apply=False)
+        self.index = np.where(self.memory_space == min_memory)[0][0]
+        self.execution_times = self.parrotfish.param_function(self.memory_space)
+        self.costs = self.execution_times * self.memory_space
 
     def get_execution_time(self) -> float:
-        return 1
+        """Get the execution time at self.memory"""
+        return self.execution_times[self.index]
+
+    def get_cost(self) -> float:
+        """Get the cost at self.memory"""
+        return self.costs[self.index]
+
+    def increase_memory(self) -> bool:
+        """Increase memory size to the next index in memory space"""
+        if self.index + 1 < len(self.memory_space):
+            self.index = self.index + 1
+            return True
+        else:
+            return False
+
+    def decrease_memory(self) -> bool:
+        """Decrease memory size to the previous index in memory space"""
+        if self.index - 1 >= 0:
+            self.index = self.index - 1
+            return True
+        else:
+            return False
 
 
 class Parallel(State):
@@ -59,6 +90,9 @@ class Parallel(State):
             max_time = max(max_time, branch_time)
         return max_time
 
+    def get_cost(self) -> float:
+        return sum(branch.get_cost() for branch in self.branches)
+
 
 class Workflow:
     """A workflow, containing a sequence of states."""
@@ -72,3 +106,6 @@ class Workflow:
     def get_execution_time(self) -> float:
         total_time = sum(state.get_execution_time() for state in self.states)
         return total_time
+
+    def get_cost(self) -> float:
+        return sum(state.get_cost() for state in self.states)

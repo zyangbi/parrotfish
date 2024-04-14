@@ -30,3 +30,5 @@ venv/
 dump/
 
 **/test.py
+
+plot/
